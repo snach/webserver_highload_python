@@ -5,9 +5,9 @@ SERVER = 'snacheva_localhost'
 
 
 def make_response(status_code,
-                  content_type='Content-Type: text/html; charset=UTF-8'):
+                  content_type='text/html; charset=UTF-8', content_length=''):
 
-    response = 'HTTP/ ' + HTTP_VER
+    response = 'HTTP/' + HTTP_VER
 
     if status_code == 400:
         response += ' 400 Bad Request'
@@ -23,7 +23,12 @@ def make_response(status_code,
     response += '\r\nServer: ' + SERVER + '\r\n'
     response += 'Date: ' + str(datetime.datetime.now()) + '\r\n'
     response += 'Content-Type: ' + content_type + '\r\n'
-    response += "Connection: close\r\n\r\n"
+    response += "Connection: close\r\n"
+
+    if status_code == 200:
+        response += "Content-Length: " + content_length + "\r\n"
+
+    response += "\r\n"
 
     if status_code == 400:
         response += "<html><head><title>400</title></head><body><h2>Bad Request</h2></body></html>"
@@ -33,4 +38,11 @@ def make_response(status_code,
         response += "<html><head><title>404 Not found</title></head><body><h2>404 Not found</h2></body></html>"
     elif status_code == 405:
         response += "<html><head><title>405</title></head><body><h2>405 Method Not Allowed</h2></body></html>"
+
+
     return response
+
+'''def content_type_of_file(path_file):
+    dot_index = path_file.rfind('.')
+    type = path_file[dot_index + 1:len(path_file)]
+    return type'''
