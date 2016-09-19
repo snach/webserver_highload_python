@@ -6,7 +6,6 @@ SERVER = 'snacheva_localhost'
 
 def make_response(status_code,
                   content_type='text/html; charset=UTF-8', content_length=''):
-
     response = 'HTTP/' + HTTP_VER
 
     if status_code == 400:
@@ -39,10 +38,4 @@ def make_response(status_code,
     elif status_code == 405:
         response += "<html><head><title>405</title></head><body><h2>405 Method Not Allowed</h2></body></html>"
 
-
     return response
-
-'''def content_type_of_file(path_file):
-    dot_index = path_file.rfind('.')
-    type = path_file[dot_index + 1:len(path_file)]
-    return type'''

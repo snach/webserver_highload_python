@@ -19,78 +19,63 @@ class Handler(asyncore.dispatcher):
         asyncore.dispatcher.__init__(self, client)
         self.data_to_write = []
 
+    def send_and_close(self, status_code):
+        self.send(make_response(status_code))
+        self.close()
+        return
+
     def handle_read(self):
         readed_data = self.recv(SEND_BUFFER_SIZE)
         readed_data = urllib.unquote(readed_data)
-        print('READED_DATA!!!!\n' + readed_data)
+        print(readed_data)
 
-        if readed_data == '':
-            self.send(make_response(405))
-            self.close()
+        if '../' in readed_data:
+            self.send_and_close(403)
             return
 
         frst_str_data = readed_data.split('\n')[0]
         index_begin_HTTP = frst_str_data.rfind('HTTP')
-        method = frst_str_data.split()[0]
-#        http_ver = frst_str_data[index_begin_HTTP + 5 : len(frst_str_data)]
-        path = frst_str_data[len(method) + 1 : index_begin_HTTP - 1]
 
-        print(method)
+        try:
+            method = frst_str_data.split()[0]
+        except IndexError:
+            self.send_and_close(405)
+            return
 
+        # http_ver = frst_str_data[index_begin_HTTP + 5 : len(frst_str_data)]
+        path = frst_str_data[len(method) + 1: index_begin_HTTP - 1]
 
         if 'get' in method.lower() or 'head' in method.lower():
 
             if '?' in path:
                 path = path.split('?')[0]
             path_to_local_data = DOCUMENT_ROOT + '/' + path
-            print(path_to_local_data)
+
         else:
 
-            self.send(make_response(405))
-            self.close()
+            self.send_and_close(405)
             return
-
-        if '../' in path_to_local_data:
-                self.send(make_response(403))
-                self.close()
-                return
 
         if not os.path.exists(path_to_local_data):
-            print(make_response(404))
-            self.send(make_response(404))
-            self.close()
+            self.send_and_close(404)
             return
         else:
-
-
 
             if os.path.isdir(path_to_local_data):
                 path_to_local_data += 'index.html'
 
-
-            print(path_to_local_data)
-
-
             try:
-                #print('i\'m here')
                 file = open(path_to_local_data, 'r').read()
             except IOError:
-                print(make_response(403))
-                self.send(make_response(403))
-                self.close()
-
-
+                self.send_and_close(403)
+                return
 
             size_of_file = os.path.getsize(path_to_local_data)
             type_of_file = mimetypes.guess_type(path_to_local_data, strict=True)[0]
 
             response = make_response(200, str(type_of_file), str(size_of_file))
-            #print(response)
-            print('RESPONSE!!!!!!!!!!!!\n' + response)
-
 
             if 'head' in method.lower():
-                print('im in need if, my method:'+ method + '!!!!!!!!!!' )
                 self.send(response)
                 self.close()
             else:
@@ -100,7 +85,6 @@ class Handler(asyncore.dispatcher):
 
     def writable(self):
         return bool(self.data_to_write)
-
 
     def handle_write(self):
         data = self.data_to_write.pop()
@@ -113,26 +97,23 @@ class Handler(asyncore.dispatcher):
         if not self.writable():
             self.handle_close()
 
-class Server(asyncore.dispatcher):
 
+class Server(asyncore.dispatcher):
     def __init__(self, host, port):
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.set_reuse_addr()
         self.bind((host, port))
         self.listen(500)
-        print('Start server: ' + host + ':' + str(port) )
+        print('Start server: ' + host + ':' + str(port))
 
     def handle_accept(self):
 
         try:
             client, addr = self.accept()
-            print('Incoming connection from %s' % repr(addr))
             Handler(client, addr)
         except:
             return
-
-
 
 
 if __name__ == '__main__':
